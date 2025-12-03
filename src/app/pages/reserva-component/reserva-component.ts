@@ -10,6 +10,8 @@ import { MaterialModule } from '../../material/material-module';
 import { DatePipe } from '@angular/common';
 import { ReservaDialogComponent } from './reserva-dialog-component/reserva-dialog-component';
 import { ReservaDeleteDialogComponent } from './reserva-delete-dialog-component/reserva-delete-dialog-component';
+import { switchMap } from 'rxjs';
+import { MesaService } from '../../services/mesa-service';
 
 @Component({
   selector: 'app-reserva-component',
@@ -36,7 +38,8 @@ export class ReservaComponent {
   constructor(
     private reservaService: ReservaService,
     private _snackBar: MatSnackBar,
-    private _dialog: MatDialog
+    private _dialog: MatDialog,
+    private mesaService: MesaService
   ) {}
 
   ngOnInit(): void {
@@ -92,6 +95,38 @@ export class ReservaComponent {
             duration: 3000,
           });
         }
+      });
+  }
+
+  cambiarEstado(reserva: Reserva) {
+    const nuevoEstado = reserva.estado;
+    let estadoMesa = reserva.mesa.estado;
+
+    if (nuevoEstado === 'Pendiente') {
+      estadoMesa = 'Disponible'; // No debe ocupar mesa
+    } else if (nuevoEstado === 'Confirmada') {
+      estadoMesa = 'Reservada';
+    } else if (nuevoEstado === 'Completada' || nuevoEstado === 'Cancelada') {
+      estadoMesa = 'Disponible';
+    }
+
+    const mesaActualizada = {
+      ...reserva.mesa,
+      estado: estadoMesa,
+    };
+
+    this.reservaService
+      .update(reserva.id, reserva)
+      .pipe(
+        switchMap(() => this.mesaService.update(mesaActualizada.id, mesaActualizada)),
+        switchMap(() => this.reservaService.findAll())
+      )
+      .subscribe({
+        next: (data) => {
+          this.reservaService.setReservaChange(data);
+          this.reservaService.setMessageChange('Estado actualizado');
+        },
+        error: (err) => console.error('Error cambiando estado', err),
       });
   }
 }

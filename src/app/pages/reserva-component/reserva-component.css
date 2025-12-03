@@ -95,3 +95,6 @@ tr:hover td {
   margin-top: 12px;
   padding: 8px 16px;
 }
+.estado-select {
+  width: 140px;
+}

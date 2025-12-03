@@ -62,10 +62,7 @@ export class ReservaDialogComponent implements OnInit {
       cliente: [this.reserva.cliente || null, Validators.required],
       mesa: [this.reserva.mesa || null, Validators.required],
       fechaHora: [this.fechaHoraLocal || '', Validators.required],
-      numeroPersonas: [
-        this.reserva.numeroPersonas || 1,
-        [Validators.required, Validators.min(1)],
-      ],
+      numeroPersonas: [this.reserva.numeroPersonas || 1, [Validators.required, Validators.min(1)]],
       estado: [this.reserva.estado || 'Pendiente', Validators.required],
       observaciones: [this.reserva.observaciones || '', Validators.maxLength(250)],
     });
@@ -104,25 +101,42 @@ export class ReservaDialogComponent implements OnInit {
       fechaHora: new Date(formValue.fechaHora),
     };
 
-    if (this.reserva && this.reserva.id > 0) {
-      this.reservaService
-        .update(this.reserva.id, reservaFinal)
-        .pipe(switchMap(() => this.reservaService.findAll()))
-        .subscribe((data) => {
-          this.reservaService.setReservaChange(data);
-          this.reservaService.setMessageChange('RESERVA UPDATED!');
-          this.close();
-        });
-    } else {
-      this.reservaService
-        .save(reservaFinal)
-        .pipe(switchMap(() => this.reservaService.findAll()))
-        .subscribe((data) => {
-          this.reservaService.setReservaChange(data);
-          this.reservaService.setMessageChange('RESERVA CREATED!');
-          this.close();
-        });
+    const mesaSeleccionada: Mesa = reservaFinal.mesa;
+
+    let nuevoEstadoMesa = mesaSeleccionada.estado;
+
+    if (reservaFinal.estado === 'Pendiente') {
+      nuevoEstadoMesa = 'Disponible'; 
+    } else if (reservaFinal.estado === 'Confirmada') {
+      nuevoEstadoMesa = 'Reservada'; 
+    } else if (reservaFinal.estado === 'Completada' || reservaFinal.estado === 'Cancelada') {
+      nuevoEstadoMesa = 'Disponible'; 
     }
+
+    const mesaActualizada: Mesa = {
+      ...mesaSeleccionada,
+      estado: nuevoEstadoMesa,
+    };
+
+    this.mesaService
+      .update(mesaActualizada.id, mesaActualizada)
+      .pipe(
+        switchMap(() => {
+          if (this.reserva && this.reserva.id > 0) {
+            return this.reservaService.update(this.reserva.id, reservaFinal);
+          } else {
+            return this.reservaService.save(reservaFinal);
+          }
+        }),
+        switchMap(() => this.reservaService.findAll())
+      )
+      .subscribe((data) => {
+        this.reservaService.setReservaChange(data);
+        this.reservaService.setMessageChange(
+          this.reserva?.id ? 'RESERVA UPDATED!' : 'RESERVA CREATED!'
+        );
+        this.close();
+      });
   }
 
   close() {
