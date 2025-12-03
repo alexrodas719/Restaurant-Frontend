@@ -7,29 +7,34 @@ import { JwtModule } from '@auth0/angular-jwt';
 import { ServerErrorsInterceptor } from './interceptor/server-error.interceptor';
 
 export function tokenGetter(){
-  return sessionStorage.getItem(environment.TOKEN_NAME);
+    return sessionStorage.getItem(environment.TOKEN_NAME);
 }
 
+// URL base de tu backend para configuración de seguridad (solo hostname)
+const RAILWAY_HOST = 'restaurant-backend-production-7291.up.railway.app';
+const RAILWAY_HOST_PROTOCOL = `https://${RAILWAY_HOST}`;
+
 export const appConfig: ApplicationConfig = {
-  providers: [
-    provideBrowserGlobalErrorListeners(),
-    provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
-    //provideHttpClient(),
-    provideHttpClient(withInterceptorsFromDi()),
-    importProvidersFrom(
-      JwtModule.forRoot({
-        config: {
-          tokenGetter: tokenGetter,
-          allowedDomains: ["localhost:9090"],
-          disallowedRoutes: ["http://localhost:9090/login/forget"],
-        },
-      }),
-    ),
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: ServerErrorsInterceptor,
-      multi: true
-    }
-  ]
+    providers: [
+        provideBrowserGlobalErrorListeners(),
+        provideZoneChangeDetection({ eventCoalescing: true }),
+        provideRouter(routes),
+        provideHttpClient(withInterceptorsFromDi()),
+        importProvidersFrom(
+            JwtModule.forRoot({
+                config: {
+                    tokenGetter: tokenGetter,
+                    // 1. Dominio permitido: Solo el hostname (sin https://)
+                    allowedDomains: [RAILWAY_HOST], 
+                    // 2. Ruta deshabilitada: Usar la URL completa con HTTPS
+                    disallowedRoutes: [`${RAILWAY_HOST_PROTOCOL}/login/forget`], 
+                },
+            }),
+        ),
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: ServerErrorsInterceptor,
+            multi: true
+        }
+    ]
 };

@@ -1,5 +1,5 @@
 export const environment = {
-    HOST: 'http://localhost:9090',
+    HOST: 'https://restaurant-backend-production-7291.up.railway.app',
     RETRY: 2,
     TOKEN_NAME: 'access_token'
 };

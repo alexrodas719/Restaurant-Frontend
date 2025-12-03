@@ -1,5 +1,6 @@
 export const environment = {
-    HOST: 'http://localhost:9090',
+    production: true, 
+    HOST: 'https://restaurant-backend-production-7291.up.railway.app', // <-- URL PÚBLICA DE RAILWAY
     RETRY: 2,
     TOKEN_NAME: 'access_token'
 };
